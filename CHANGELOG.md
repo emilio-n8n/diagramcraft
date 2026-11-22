@@ -2,6 +2,14 @@
 
 All notable changes to DiagramCraft are documented here.
 
+## [0.2.1] - 2026-11-22
+
+### Fixed
+
+- The Rectangle, Ellipse, Note and Diamond tools now place a new shape when
+  clicking anywhere on empty canvas, instead of only on an existing shape.
+- Removed duplicated Settings and Job buttons from the toolbar.
+
 ## [0.2.0] - 2026-11-22
 
 ### Added
