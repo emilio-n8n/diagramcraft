@@ -715,9 +715,6 @@ impl DiagramApp {
             if ui.button("Settings").clicked() {
                 action = Some(Action::Settings);
             }
-            if ui.button("Settings").clicked() {
-                action = Some(Action::Settings);
-            }
         });
         if let Some(action) = action {
             self.handle_action(action);
@@ -881,12 +878,6 @@ impl DiagramApp {
                     if widgets::toolbar_button(ui, "Job", "Start a demo background job").clicked() {
                         self.start_job();
                     }
-                    if widgets::toolbar_button(ui, "Job", "Start a demo background job").clicked() {
-                        self.start_job();
-                    }
-                    if widgets::toolbar_button(ui, "Job", "Start a demo background job").clicked() {
-                        self.start_job();
-                    }
                 });
             });
             ui.add_space(4.0);
@@ -1030,6 +1021,22 @@ impl DiagramApp {
             }
         }
 
+        // Shape placement: a shape tool adds a new shape anywhere on the canvas.
+        if let Some(kind) = self.tool.shape_kind() {
+            let x = document::snap_if(self.snap_enabled, world.0);
+            let y = document::snap_if(self.snap_enabled, world.1);
+            let next = document.next_shape;
+            if self.host.apply(|document| {
+                document.add_shape(kind, x, y);
+            }) {
+                self.selected = vec![next];
+                self.selected_connector = None;
+                self.shell
+                    .set_status(format!("Added a {} shape", kind.label()));
+            }
+            return;
+        }
+
         // Connector selection.
         if self.tool == Tool::Select
             && let Some(id) =
@@ -1042,21 +1049,6 @@ impl DiagramApp {
         }
 
         if let Some(id) = self.hit_shape(world.0, world.1) {
-            if let Some(kind) = self.tool.shape_kind() {
-                let x = document::snap_if(self.snap_enabled, world.0);
-                let y = document::snap_if(self.snap_enabled, world.1);
-                let next = document.next_shape;
-                if self.host.apply(|document| {
-                    document.add_shape(kind, x, y);
-                }) {
-                    self.selected = vec![next];
-                    self.selected_connector = None;
-                    self.shell
-                        .set_status(format!("Added a {} shape", kind.label()));
-                }
-                return;
-            }
-
             if self.tool == Tool::Connect {
                 if let Some(from) = self.connect_from.take() {
                     if from != id {
