@@ -37,3 +37,45 @@ and serializable through the CraftKit envelope.
 Consequences: deleting a shape must also drop its connectors; new shapes and
 links are allocated from document-owned counters. The SVG renderer reuses the
 same edge-point geometry as the canvas so exports match the editor.
+
+## ADR-003 — Productisation schema and routing
+
+Date: 2026-11-22
+
+Decision: for the v0.2 editor, each `Connector` carries a `routing` mode
+(straight or orthogonal) and optional `waypoints`. The schema is bumped to 2.
+Schema-1 files keep loading because the new fields use `#[serde(default)]`;
+`Document::normalize` then repairs counters and drops dangling links after a
+file is opened.
+
+Alternatives: keep a single routing style; store screen coordinates for
+waypoints; reject older files and require manual conversion.
+
+Reasons: orthogonal routing with waypoints is what makes connectors useful in a
+technical diagram, and defaults keep the published v0.1.0 release readable as a
+snapshot. Pure geometry functions (`geometry.rs`) are shared by canvas, SVG and
+PDF so all three agree on connector endpoints.
+
+Consequences: the SVG and PDF renderers emit polylines for orthogonal links;
+drags use one history gesture per interaction; label edits go through a single
+`DocumentHost::apply` so they are one undo step.
+
+## ADR-004 — Dependency-free vector PDF export
+
+Date: 2026-11-22
+
+Decision: generate PDF 1.4 bytes directly in `src/pdf.rs` using native path and
+text operators (rectangles, cubic Bézier ellipses, polygons, polylines and
+Helvetica text), with no new crate dependency.
+
+Alternatives: rasterise the canvas to an image and embed it (not vector);
+introduce a heavyweight PDF crate.
+
+Reasons: the document is plain data, so a small deterministic writer produces a
+valid single-page file that can be tested byte-for-byte without a GUI or a
+font file. Only standard Helvetica is referenced, and text is WinAnsi with
+non-Latin-1 characters replaced by `?`.
+
+Consequences: exports are crisp at any zoom; non-Latin labels degrade to `?`;
+PDF validity is covered by unit tests on the header, xref offsets, stream length
+and page content.

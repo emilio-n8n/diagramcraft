@@ -1,10 +1,10 @@
 //! Readable SVG export for diagram documents.
 //!
 //! The renderer is a pure function of the document so it can be unit-tested
-//! without a window. Connector endpoints use the same edge geometry as the
-//! canvas, keeping the exported diagram visually consistent with the editor.
+//! without a window. Connector endpoints use the same geometry as the canvas
+//! and the PDF exporter, keeping exported diagrams consistent with the editor.
 
-use crate::document::{self, Document, Shape, ShapeKind};
+use crate::document::{self, Document, Point, Shape, ShapeKind};
 
 const PADDING: f64 = 40.0;
 const BACKGROUND: &str = "#121419";
@@ -41,6 +41,32 @@ fn number(value: f64) -> String {
     }
 }
 
+/// Format a point as an SVG `x,y` pair.
+fn point(value: Point) -> String {
+    format!("{},{}", number(value.x), number(value.y))
+}
+
+/// Arrow head at the last point of a connector path.
+fn arrow(from: Point, to: Point) -> String {
+    let angle = (to.y - from.y).atan2(to.x - from.x);
+    const LENGTH: f64 = 12.0;
+    let left = Point::new(
+        to.x + LENGTH * (angle + std::f64::consts::PI - 0.45).cos(),
+        to.y + LENGTH * (angle + std::f64::consts::PI - 0.45).sin(),
+    );
+    let right = Point::new(
+        to.x + LENGTH * (angle + std::f64::consts::PI + 0.45).cos(),
+        to.y + LENGTH * (angle + std::f64::consts::PI + 0.45).sin(),
+    );
+    format!(
+        "  <polygon points=\"{} {} {}\" fill=\"{}\"/>\n",
+        point(to),
+        point(left),
+        point(right),
+        LINK_COLOR
+    )
+}
+
 /// Render a whole document as a standalone SVG string.
 #[must_use]
 pub fn render(document: &Document) -> String {
@@ -75,46 +101,34 @@ pub fn render(document: &Document) -> String {
     ));
 
     for connector in &document.connectors {
-        let (Some(from), Some(to)) = (
-            document.find_shape(connector.from_shape),
-            document.find_shape(connector.to_shape),
-        ) else {
+        let path = document.connector_points(connector);
+        if path.len() < 2 {
             continue;
+        }
+        let line = if path.len() == 2 {
+            format!(
+                "  <line x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\" stroke=\"{}\" stroke-width=\"2\"/>\n",
+                number(path[0].x),
+                number(path[0].y),
+                number(path[1].x),
+                number(path[1].y),
+                LINK_COLOR
+            )
+        } else {
+            let points: Vec<String> = path.iter().map(|point| crate::svg::point(*point)).collect();
+            format!(
+                "  <polyline points=\"{}\" fill=\"none\" stroke=\"{}\" stroke-width=\"2\"/>\n",
+                points.join(" "),
+                LINK_COLOR
+            )
         };
-        let from_center = document::center(from);
-        let to_center = document::center(to);
-        let start = document::edge_point(from, to_center.0, to_center.1);
-        let end = document::edge_point(to, from_center.0, from_center.1);
+        out.push_str(&line);
 
-        out.push_str(&format!(
-            "  <line x1=\"{}\" y1=\"{}\" x2=\"{}\" y2=\"{}\" stroke=\"{}\" stroke-width=\"2\"/>\n",
-            number(start.0),
-            number(start.1),
-            number(end.0),
-            number(end.1),
-            LINK_COLOR
-        ));
-
-        let angle = (end.1 - start.1).atan2(end.0 - start.0);
-        let arrow = 12.0;
-        let left = (
-            end.0 + arrow * (angle + std::f64::consts::PI - 0.45).cos(),
-            end.1 + arrow * (angle + std::f64::consts::PI - 0.45).sin(),
-        );
-        let right = (
-            end.0 + arrow * (angle + std::f64::consts::PI + 0.45).cos(),
-            end.1 + arrow * (angle + std::f64::consts::PI + 0.45).sin(),
-        );
-        out.push_str(&format!(
-            "  <polygon points=\"{},{} {},{} {},{}\" fill=\"{}\"/>\n",
-            number(end.0),
-            number(end.1),
-            number(left.0),
-            number(left.1),
-            number(right.0),
-            number(right.1),
-            LINK_COLOR
-        ));
+        let split = path.len().saturating_sub(1);
+        let (before, last) = path.split_at(split);
+        if let (Some(previous), Some(end)) = (before.last(), last.first()) {
+            out.push_str(&arrow(*previous, *end));
+        }
     }
 
     for shape in &document.shapes {
@@ -196,6 +210,7 @@ fn render_shape(shape: &Shape) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::document::{Routing, ShapeKind};
 
     #[test]
     fn sample_renders_all_shapes_and_connectors() {
@@ -203,13 +218,41 @@ mod tests {
         assert!(svg.starts_with("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assert!(svg.contains("<svg xmlns=\"http://www.w3.org/2000/svg\""));
         assert!(svg.trim_end().ends_with("</svg>"));
-        assert_eq!(svg.matches("<line ").count(), 2);
+        assert_eq!(svg.matches("<line ").count(), 1);
+        assert!(svg.contains("<polyline"));
         assert_eq!(svg.matches("<polygon points=").count(), 3); // 2 arrow heads + 1 diamond
         assert!(svg.contains(">Start</text>"));
         assert!(svg.contains(">Decision?</text>"));
         assert!(svg.contains(">End</text>"));
         assert!(svg.contains("#E8573F"));
-        assert!(svg.contains("viewBox=\"0 30 660 170\""));
+        assert!(svg.contains("viewBox=\"0 30 660 210\""));
+    }
+
+    #[test]
+    fn orthogonal_connectors_render_as_polylines() {
+        let mut document = Document::default();
+        let a = document.add_shape(ShapeKind::Rectangle, 0.0, 0.0);
+        let b = document.add_shape(ShapeKind::Rectangle, 300.0, 200.0);
+        document
+            .add_connector_with_routing(a, b, Routing::Orthogonal)
+            .expect("connector");
+        let svg = render(&document);
+        assert!(svg.contains("<polyline"));
+        assert!(!svg.contains("<line "));
+        assert_eq!(svg.matches("<polygon points=").count(), 1); // arrow head
+    }
+
+    #[test]
+    fn waypoints_appear_in_the_polyline() {
+        let mut document = Document::default();
+        let a = document.add_shape(ShapeKind::Rectangle, 0.0, 0.0);
+        let b = document.add_shape(ShapeKind::Rectangle, 300.0, 200.0);
+        let id = document
+            .add_connector_with_routing(a, b, Routing::Orthogonal)
+            .expect("connector");
+        document.add_waypoint(id, Point::new(150.0, 250.0));
+        let svg = render(&document);
+        assert!(svg.contains("150,250"));
     }
 
     #[test]

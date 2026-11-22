@@ -4,6 +4,8 @@
 
 mod app;
 mod document;
+mod geometry;
+mod pdf;
 mod svg;
 
 use craftkit_ui::cli::{self, CliAction};

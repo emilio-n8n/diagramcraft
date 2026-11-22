@@ -21,8 +21,11 @@ export CARGO_TARGET_DIR=/tmp/cargo-target
 
 ```text
 src/main.rs       CLI, window options and eframe startup
-src/app.rs        UI, menus, actions and project lifecycle
-src/document.rs   application document model
+src/app.rs        UI, palette, canvas interactions and lifecycle
+src/document.rs   document model and domain operations
+src/geometry.rs   pure resize/route/align/fit geometry
+src/svg.rs        pure SVG renderer
+src/pdf.rs        pure vector PDF renderer
 ```
 
 CraftKit provides:
