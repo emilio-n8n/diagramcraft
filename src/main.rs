@@ -1,9 +1,10 @@
-//! CraftKit reference application entry point.
+//! DiagramCraft entry point: CLI parsing and native window startup.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
 mod document;
+mod svg;
 
 use craftkit_ui::cli::{self, CliAction};
 use craftkit_ui::{WindowOptions, run_native};
@@ -23,7 +24,7 @@ fn main() -> craftkit_ui::eframe::Result<()> {
                 "{}",
                 cli::help_text(
                     "diagramcraft",
-                    "CraftKit demo — notes application and reference implementation"
+                    "DiagramCraft — diagram editor with shapes, connectors and SVG export"
                 )
             );
             return Ok(());
@@ -36,7 +37,7 @@ fn main() -> craftkit_ui::eframe::Result<()> {
     };
 
     run_native(WindowOptions::new("DiagramCraft"), move |context| {
-        let app = app::DemoApp::new(context, options);
+        let app = app::DiagramApp::new(context, options);
         Ok(Box::new(app) as Box<dyn craftkit_ui::eframe::App>)
     })
 }

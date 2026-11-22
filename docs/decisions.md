@@ -22,10 +22,18 @@ this repository.
 
 Date: 2026-11-22
 
-Decision: <describe the document, units and identifiers>
+Decision: store a diagram as `Document { title, shapes, connectors, next_shape,
+next_connector }` in schema version 1. A `Shape` owns its id, kind, rectangular
+geometry, label and colour; a `Connector` only stores the ids of the two shapes
+it links. Geometry uses abstract canvas units and the UI owns pan/zoom.
 
-Alternatives:
+Alternatives: embed paths in each connector; store screen coordinates; reference
+external assets by path.
 
-Reasons:
+Reasons: connectors survive moves because endpoints are resolved dynamically,
+and a saved project stays self-sufficient. Plain data keeps the model testable
+and serializable through the CraftKit envelope.
 
-Consequences:
+Consequences: deleting a shape must also drop its connectors; new shapes and
+links are allocated from document-owned counters. The SVG renderer reuses the
+same edge-point geometry as the canvas so exports match the editor.

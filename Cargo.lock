@@ -711,6 +711,7 @@ dependencies = [
  "craftkit-jobs",
  "craftkit-ui",
  "serde",
+ "tempfile",
 ]
 
 [[package]]

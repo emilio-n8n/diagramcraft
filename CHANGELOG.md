@@ -10,4 +10,7 @@ All notable changes to DiagramCraft are documented here.
 - Versioned project files with atomic save.
 - Undo/redo through the shared document history.
 - Background jobs with progress and cancellation.
-- Application-specific document model and UI.
+- Diagram document model with shapes, connectors and id allocation.
+- Shape palette, canvas with pan/zoom, selection, move, connect and delete.
+- Grid snapping and edge-anchored straight connectors.
+- Standalone SVG export.

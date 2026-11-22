@@ -12,8 +12,18 @@ desktop foundation.
 ## Features
 
 - Native Rust desktop UI (egui/eframe), no web runtime.
-- Versioned JSON project files with atomic saves.
-- Bounded undo/redo through the shared document history.
+- Shape palette: Rectangle, Ellipse, Note and Diamond; click the canvas to
+  place a shape, snapped to a 10-unit grid.
+- Select and move shapes with the mouse; Delete removes a shape and every
+  connector attached to it.
+- Connect tool: click two shapes to link them with a straight line anchored on
+  their edges.
+- Canvas pan by dragging the background and zoom with the scroll wheel.
+- Readable, standalone SVG export of the whole diagram.
+- Versioned JSON project files with atomic saves (format `diagramcraft`,
+  schema 1).
+- Bounded undo/redo through the shared document history; drags are a single
+  undo step.
 - Background jobs with progress and cooperative cancellation.
 - Recent files and persisted preferences.
 - Offline-first: no account, no telemetry, no network required.
@@ -46,9 +56,9 @@ Linux windowing development packages are installed by the CI workflow.
 
 ```text
 src/main.rs       CLI and window startup
-src/app.rs        UI, menus and lifecycle
-src/document.rs   application document model
-src/...           domain modules
+src/app.rs        UI, palette, canvas interactions and lifecycle
+src/document.rs   application document model and geometry helpers
+src/svg.rs        pure SVG renderer
 ```
 
 The application depends on pinned CraftKit crates from Git. Keep the tag in
