@@ -56,7 +56,7 @@ Each release should attach:
 
 - archives named `<id>-<version>-<os>-<arch>.<ext>`:
   - `diagramcraft-<version>-linux-x86_64.tar.gz` or `.AppImage` / `.deb` / `.rpm`
-  - `diagramcraft-<version>-windows-x64.zip` or `.msi`
+  - `diagramcraft-<version>-windows-x64-portable.zip` or `.msi`
   - `diagramcraft-<version>-macos-aarch64.dmg` / `macos-x86_64.dmg`
 - `craft-app.json`
 - `diagramcraft-128.png`
