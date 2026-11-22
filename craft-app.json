@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "id": "diagramcraft",
+  "name": "DiagramCraft",
+  "tagline": "Diagram editor for shapes, connectors and SVG export",
+  "repo": "emilio-n8n/diagramcraft",
+  "publisher": "emilio-n8n",
+  "upstream": null,
+  "bundle_id": "io.github.emilion8n.diagramcraft",
+  "msi_publisher": "emilio-n8n",
+  "apple_team": null,
+  "website": "https://github.com/emilio-n8n/diagramcraft",
+  "color": "#e8573f",
+  "icon": "diagramcraft-128.png"
+}
